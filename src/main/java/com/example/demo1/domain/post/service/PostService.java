@@ -106,4 +106,14 @@ public class PostService {
         }
         postRepository.deleteById(postId);
     }
+    // domain/post/service/PostService.java 파일 안에 추가
+    @Transactional
+    public void hidePost(Long postId) {
+        // 1. 해당 ID의 게시글을 찾고, 없으면 에러 발생
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다."));
+
+        // 2. 게시글의 상태를 숨김으로 변경
+        post.hide();
+    }
 }

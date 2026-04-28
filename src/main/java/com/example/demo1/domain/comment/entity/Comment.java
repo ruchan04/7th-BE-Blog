@@ -28,4 +28,11 @@ public class Comment extends BaseEntity {
 
     @Column(length = 255)
     private String content;
+
+    // domain/comment/entity/Comment.java
+    private boolean isAdopted = false; // 기본값 false
+
+    public void adopt() {
+        this.isAdopted = true;
+    }
 }

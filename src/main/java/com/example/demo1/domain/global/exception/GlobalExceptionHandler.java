@@ -31,4 +31,9 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(BaseResponse.onFailure("4040", e.getMessage(), null));
     }
+    @ExceptionHandler(IllegalStateException.class)
+    public BaseResponse<String> handleIllegalStateException(IllegalStateException e) {
+        // 500 에러 대신 400(Bad Request) 계열의 코드로 응답을 보냅니다.
+        return BaseResponse.onFailure("REPORT400", e.getMessage(), null);
+    }
 }
