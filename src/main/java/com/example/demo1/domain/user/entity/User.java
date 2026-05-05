@@ -10,7 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "user")
+// [수정 포인트 1] 'user'는 예약어이므로 테이블 이름을 'users'로 변경합니다.
+@Table(name = "users")
 @Builder
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -23,20 +24,21 @@ public class User extends BaseEntity {
 
     private Integer age;
 
-    @Column(length = 255)
+    // [수정 포인트 2] 실무에서는 null 방지나 유니크 설정을 위해 column 정의를 더 구체적으로 합니다.
+    @Column(nullable = false, length = 20)
     private String name;
 
-    @Column(length = 255)
+    @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    @Column(length = 255)
+    @Column(length = 50)
     private String nickname;
 
     @Builder.Default
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Post> posts = new ArrayList<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
 }

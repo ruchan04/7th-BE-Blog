@@ -47,4 +47,10 @@ public class PostController {
         postService.delete(postId);
         return BaseResponse.onSuccess("2003", "게시글 삭제 성공", "삭제된 게시글 ID: " + postId);
     }
+    // domain/post/controller/PostController.java (기존 파일에 추가)
+    @PatchMapping("/{postId}/hide")
+    public BaseResponse<String> hidePost(@PathVariable Long postId) {
+        postService.hidePost(postId); // postStatus를 HIDDEN으로 바꾸는 로직
+        return BaseResponse.onSuccess("POST200", "게시글 숨김 처리가 완료되었습니다.", null);
+    }
 }

@@ -45,4 +45,11 @@ public class Post extends BaseEntity {
         this.content = content;
         this.description = description;
     }
+    // domain/post/entity/Post.java 파일 안에 추가
+    @Enumerated(EnumType.STRING)
+    private PostStatus status = PostStatus.ACTIVE; // 기본값은 ACTIVE
+
+    public void hide() {
+        this.status = PostStatus.HIDDEN; // 상태를 HIDDEN으로 변경
+    }
 }
