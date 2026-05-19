@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.AntPathMatcher; // 💡 추가
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -17,31 +18,56 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final AntPathMatcher pathMatcher = new AntPathMatcher(); // 💡 추가
+
+    // 💡 인증을 거치지 않을 화이트리스트 경로들 정의
+    private static final List<String> EXCLUDE_URLS = List.of(
+            "/auth/**",
+            "/auth/oauth/**",
+            "/oauth/**",
+            "/h2-console/**",
+            "/swagger-ui/**",
+            "/v3/api-docs/**",
+            "/swagger-resources/**",
+            "/webjars/**"
+    );
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getRequestURI();
+        String contextPath = request.getContextPath();
+
+        if (contextPath != null && !contextPath.isEmpty() && path.startsWith(contextPath)) {
+            path = path.substring(contextPath.length());
+        }
+
+        // 💡 경로 패턴이 하나라도 일치하면 필터를 거치지 않음 (true 반환)
+        final String finalPath = path;
+        return EXCLUDE_URLS.stream().anyMatch(pattern -> pathMatcher.match(pattern, finalPath));
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        // 1. 헤더에서 Authorization 추출
         String authHeader = request.getHeader("Authorization");
 
-        // 2. Bearer 토큰인지 확인
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
+            String token = authHeader.substring(7).trim();
 
-            // 3. 토큰 유효성 검사
             if (jwtUtil.validateToken(token)) {
                 Long userId = jwtUtil.getUserId(token);
+                String principal = String.valueOf(userId);
 
-                // 4. SecurityContext에 인증 정보 저장 (이걸 해야 @AuthenticationPrincipal 사용 가능)
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(userId, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                        new UsernamePasswordAuthenticationToken(principal, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+            } else {
+                SecurityContextHolder.clearContext();
             }
         }
 
-        // 5. 다음 필터로 진행
         filterChain.doFilter(request, response);
     }
 }

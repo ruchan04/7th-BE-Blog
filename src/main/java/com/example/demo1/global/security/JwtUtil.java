@@ -1,62 +1,72 @@
 package com.example.demo1.global.security;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.util.Base64;
 import java.util.Date;
-import java.util.UUID;
 
 @Component
 public class JwtUtil {
-    private final String secretKey = "yuchan_secret_key_for_fds_lab_project_security_long_key";
-    private final long AT_EXP = 1800000L;
-    private final long RT_EXP = 1209600000L;
 
-    private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+    @Value("${jwt.secret}")
+    private String secretKey;
+
+    private Key key;
+
+    // 토큰 만료 시간 설정
+    private final long accessTokenValidity = 1000L * 60 * 30; // 30분
+    private final long refreshTokenValidity = 1000L * 60 * 60 * 24 * 7; // 7일
+
+    @PostConstruct
+    protected void init() {
+        byte[] keyBytes = Base64.getDecoder().decode(secretKey);
+        this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
+    // Access Token 생성 (Long 타입 userId 사용)
     public String createAccessToken(Long userId) {
-        Claims claims = Jwts.claims().setSubject(userId.toString());
+        Claims claims = Jwts.claims().setSubject(String.valueOf(userId));
+        Date now = new Date();
+        Date validity = new Date(now.getTime() + accessTokenValidity);
+
         return Jwts.builder()
                 .setClaims(claims)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + AT_EXP))
-                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .setIssuedAt(now)
+                .setExpiration(validity)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
+    // Refresh Token 생성
     public String createRefreshToken() {
-        return UUID.randomUUID().toString();
+        Date now = new Date();
+        Date validity = new Date(now.getTime() + refreshTokenValidity);
+
+        return Jwts.builder()
+                .setIssuedAt(now)
+                .setExpiration(validity)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
     }
 
+    // 토큰에서 UserId 추출
+    public Long getUserId(String token) {
+        String subject = Jwts.parserBuilder().setSigningKey(key).build()
+                .parseClaimsJws(token).getBody().getSubject();
+        return Long.valueOf(subject);
+    }
+
+    // 토큰 유효성 검증
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token);
+            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
-        } catch (Exception e) {
+        } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
-    }
-
-    public Long getUserId(String token) {
-        return Long.parseLong(Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(token).getBody().getSubject());
-    }
-    // JwtUtil.java에 추가
-    public Claims getClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-    }
-
-    public Long getUserIdFromToken(String token) {
-        return Long.parseLong(getClaims(token).getSubject());
     }
 }
