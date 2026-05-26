@@ -1,5 +1,5 @@
 # 1. 빌드 스테이지
-FROM openjdk:17-jdk-slim AS build
+FROM openjdk:17-jdk-slim
 WORKDIR /app
 COPY . .
 RUN chmod +x ./gradlew
