@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: jdbc:mysql://db:3306/leets_blog?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&useSSL=false
+    username: user
+    password: user_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+jwt:
+  secret: c3ByaW5nLWJvb3Qtc2VjdXJpdHktand0LWJsb2ctYXBpLXNlY3JldC1rZXktZm9yLWxlZXRzLXNldmVudGg=
